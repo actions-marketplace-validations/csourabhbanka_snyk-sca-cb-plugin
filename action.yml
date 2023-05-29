@@ -1,6 +1,7 @@
 name: "snyk sca scanner"
 description: "snyk sca scanner"
 color: "green"
+icon: "alert-circle"
 inputs:
   aws-access-key-id:  # id of input
     description: 'aws access key id'

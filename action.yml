@@ -1,0 +1,63 @@
+name: "snyk sca scanner"
+description: "snyk sca scanner"
+inputs:
+  aws-access-key-id:  # id of input
+    description: 'aws access key id'
+    required: true
+    default: ''
+  aws-secret-access-key:  # id of input
+    description: 'aws secret access key'
+    required: true
+    default: ''
+  aws-region:  # id of input
+    description: 'aws region'
+    required: true
+    default: ''
+  harbor_registry:  # id of input
+    description: 'harbor registry'
+    required: true
+    default: ''
+  harbor_username:  # id of input
+    description: 'harbor username'
+    required: true
+    default: ''
+  harbor_password:  # id of input
+    description: 'harbor password'
+    required: true
+    default: ''
+  config_json:  # id of input
+    description: 'config json'
+    required: true
+    default: ''
+  git_secret_access_token:  # id of input
+    description: 'git secret access token'
+    required: true
+    default: ''
+  git_repo_url:  # id of input
+    description: 'git repo url'
+    required: true
+    default: ''
+  snyk_client_secret:  # id of input
+    description: 'snyk client secret'
+    required: true
+    default: ''   
+runs:
+  using: composite
+  steps:
+  - uses: aws-actions/configure-aws-credentials@v1
+    with:
+      # Actions cannot access secrets so pass them in as inputs
+      aws-access-key-id: ${{ inputs.aws-access-key-id }}
+      aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+      aws-region: ${{ inputs.aws-region }}
+  - uses: docker/login-action@v1
+    with:
+      registry: ${{ inputs.harbor_registry }}
+      username: ${{ inputs.harbor_username }}
+      password: ${{ inputs.harbor_password }}
+  - run: docker pull registry.saas-dev.beescloud.com/staging/compliance-snyksca:25
+    shell: bash
+  - run: echo ${{ inputs.git_repo_url }}
+    shell: bash
+  - run: docker run -e AWS_ACCESS_KEY_ID=${{ inputs.aws-access-key-id }} -e AWS_SECRET_ACCESS_KEY=${{ inputs.aws-secret-access-key }} -e AWS_REGION=${{ inputs.aws-region }} -e S3_BUCKET_NAME=tekton-dev -e TOKEN_ID=${{ inputs.git_secret_access_token }} -e CONFIG_JSON='{"host":"localhost","port":"5001","metaInfo":{"url":"NA","username":"cloudbees-compliance-cbc","password":"NA","client_secret":"${{ inputs.snyk_client_secret }}","toolName":"snyksca"},"orchestratorInfo":{"bucket":"tekton-dev","object":"NA","language":"LANGUAGE_JAVASCRIPT","binAttributeType":"PRIMARY","assetType":"CODE","assetSubType":"github_repo","assetIdentifier":"${{ inputs.git_repo_url }}","profileIdentifier":"refs/heads/master","protoVersion":"040","timeout":800,"concurrent":1},"rbacId":"defaultId","pipelineInfo":{"id":"04612","name":"test_pipeline","stepId":"04612_test_pipeline"}}' -p 8060:5001 registry.saas-dev.beescloud.com/staging/compliance-snyksca:25
+    shell: bash
